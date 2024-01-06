@@ -1,9 +1,15 @@
 import React, { useEffect, useState } from "react";
+const crypto = require('crypto');
 
 const API_URL = "http://localhost:8080";
 
 function App() {
   const [data, setData] = useState<string>();
+  const [checksum, setChecksum] = useState<number>();
+
+  const calculateChecksum = (data: string): number => {
+      return crypto.createHash('sha256').update(data).digest('hex');
+  };
 
   useEffect(() => {
     getData();
@@ -11,8 +17,9 @@ function App() {
 
   const getData = async () => {
     const response = await fetch(API_URL);
-    const { data } = await response.json();
-    setData(data);
+    const res = await response.json();
+    setData(res.data);
+    setChecksum(res.checksum);
   };
 
   const updateData = async () => {
@@ -28,8 +35,23 @@ function App() {
     await getData();
   };
 
+  //Function verify if the the data has been tampered or not.
   const verifyData = async () => {
-    throw new Error("Not implemented");
+    const clientChecksum = calculateChecksum(data!);
+
+    if (clientChecksum !== checksum) {
+      alert("Data is tampered");
+    } else {
+      alert("Data is intact!");
+    }
+  };
+
+  //Function to get the original data from the backup database
+  const retriveData = async () => {
+    const response = await fetch(API_URL);
+    const res = await response.json();
+    setData(res.data);
+    setChecksum(res.checksum);
   };
 
   return (
@@ -61,6 +83,9 @@ function App() {
         </button>
         <button style={{ fontSize: "20px" }} onClick={verifyData}>
           Verify Data
+        </button>
+        <button style={{ fontSize: "20px" }} onClick={retriveData}>
+          Retrive Data
         </button>
       </div>
     </div>
